@@ -6,71 +6,74 @@
 //      Peter MacMillan <peter@macmillan.io>
 //
 //  _    null 0x80 null
-// |_|   0x01 0x02 0x04
-// |_|   0x10 0x20 0x40
+// |_|   0x40 0x20 0x10
+// |_|   0x04 0x02 0x01
 //
 //    _  _     _  _  _  _  _
 //  | _| _||_||_ |_   ||_||_|
 //  ||_  _|  | _||_|  ||_| _| 
+//
+//
 
-var charmap = {
-    '0': 0x80 + 0x01 +        0x04 + 0x10 + 0x20 + 0x40,
-    '1':                      0x04 +               0x40,
-    '2': 0x80 +        0x02 + 0x04 + 0x10 + 0x20,
-    '3': 0x80 +        0x02 + 0x04 +        0x20 + 0x40,
-    '4':        0x01 + 0x02 + 0x04 +               0x40,
-    '5': 0x80 + 0x01 + 0x02 +               0x20 + 0x40,
-    '6': 0x80 + 0x01 + 0x02 +        0x10 + 0x20 + 0x40,
-    '7': 0x80 +               0x04 +               0x40,
-    '8': 0x80 + 0x01 + 0x02 + 0x04 + 0x10 + 0x20 + 0x40,
-    '9': 0x80 + 0x01 + 0x02 + 0x04 + 0x20 +        0x40
+
+const CHAR_MAP = {
+    '0': 0b11110101,
+    '1': 0b00010001,
+    '2': 0b11100011,
+    '3': 0b10110011,
+    '4': 0b00010111,
+    '5': 0b10110110,
+    '6': 0b11110110,
+    '7': 0b10010001,
+    '8': 0b11110111,
+    '9': 0b10110111,
 };
 
-function bitrow(code) {
+let bitrow = (code) => {
     return (
-        ((code & 0x1) ? '|' : ' ') +
-        ((code & 0x2) ? '_' : ' ') +
-        ((code & 0x4) ? '|' : ' '));
-}
+        ((code & 0b0100) ? '|' : ' ') +
+        ((code & 0b0010) ? '_' : ' ') +
+        ((code & 0b0001) ? '|' : ' '));
+};
 
+let decodebitrow = (lines, row) => {
+    var code = 0;
 
-function renderChar(chr) {
-    var code = charmap[chr];
+    if (lines[row][0] === '|') { code += 0b0100; }
+    if (lines[row][1] === '_') { code += 0b0010; }
+    if (lines[row][2] === '|') { code += 0b0001; }
+
+    return code;
+};
+
+let renderChar = (chr) => {
+    var code = CHAR_MAP[chr];
 
     if (!code)
-        throw new Error('unsupported character: "' + chr + '"');
+        throw new Error(`unsupported character: "${chr}"`);
 
     return [
-        ((code & 0x80) ? ' _ ' : '   '),
-        bitrow(code & 0x0F),
-        bitrow((code & 0x70) >> 4)
+        ((code & 0b10000000) ? ' _ ' : '   '),
+        bitrow(code & 0b00001111),
+        bitrow((code & 0b01110000) >> 4)
     ];
-}
+};
 
-function charForCode(code) {
+let charForCode = (code) => {
     var key;
 
-    for (key in charmap) {
-        if (charmap[key] === code) {
+    for (key in CHAR_MAP) {
+        if (CHAR_MAP[key] === code) {
             return key;
         }
     }
 
-    throw new Error('Code 0x' + code.toString(16) + ' not valid');
-}
+    throw new Error(`Code 0x${code.toString(16)} not valid`);
+};
 
-function decodebitrow(lines, row) {
-    var code = 0;
 
-    if (lines[row][0] === '|') { code += 0x01; }
-    if (lines[row][1] === '_') { code += 0x02; }
-    if (lines[row][2] === '|') { code += 0x04; }
-
-    return code;
-}
-
-function decodeChar(chr) {
-    var code = 0,
+let decodeChar = (chr) => {
+    let code = 0,
         lines = chr.split('\n');
 
     if (lines[0][1] === '_') { code += 0x80; }
@@ -79,17 +82,17 @@ function decodeChar(chr) {
     code += (decodebitrow(lines, 2) & 0x7) << 4;
 
     return charForCode(code);
-}
+};
 
 
-function renderLine(string) {
-    var i, j, len,
+let renderLine = (string) => {
+    let len,
         result = '',
         rendered = string.split('').map(renderChar);
 
     len = rendered.length;
-    for (i = 0; i < 3; ++i) {
-        for (j = 0; j < len; ++j) {
+    for (let i = 0; i < 3; ++i) {
+        for (let j = 0; j < len; ++j) {
             result += rendered[j][i];
         }
         result += '\n';
@@ -99,13 +102,13 @@ function renderLine(string) {
 }
 
 
-function chunk(string) {
-    var i, len,
+let chunk = (string) => {
+    let len,
         result = [],
         tmp = string.split('\n');
 
     len = tmp.length;
-    for (i = 0; i < len; i += 3) {
+    for (let i = 0; i < len; i += 3) {
         result.push([tmp[i+0], tmp[i+1], tmp[i+2]]);
         ++i; // gap between lines
     }
@@ -114,16 +117,16 @@ function chunk(string) {
 }
 
 
-function decodeLine(line) {
-    var i, j, len,
+let decodeLine = (line) => {
+    var len,
         result = [],
         chr;
 
     len = line[0].length;
-    for (i = 0; i < len; i += 3) {
+    for (let i = 0; i < len; i += 3) {
         chr = '';
 
-        for (j = 0; j < 3; ++j) {
+        for (let j = 0; j < 3; ++j) {
             chr += line[j][i+0] + line[j][i+1] + line[j][i+2] + '\n';
         }
 
@@ -131,14 +134,14 @@ function decodeLine(line) {
     }
 
     return result.join('');
+};
+
+
+export function render(string) {
+    return string.split('\n').map(renderLine).join('\n');
 }
 
-
-exports.render = function (string) {
-    return string.split('\n').map(renderLine).join('\n');
-};
-
-exports.decode = function (banner) {
+export function decode(banner) {
     return chunk(banner).map(decodeLine).join('\n');
-};
+}
 
