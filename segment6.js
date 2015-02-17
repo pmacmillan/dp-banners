@@ -31,9 +31,9 @@ const CHAR_MAP = {
 
 let bitrow = (code) => {
     return (
-        ((code & 0b0100) ? '|' : ' ') +
-        ((code & 0b0010) ? '_' : ' ') +
-        ((code & 0b0001) ? '|' : ' '));
+        ((code & 0b100) ? '|' : ' ') +
+        ((code & 0b010) ? '_' : ' ') +
+        ((code & 0b001) ? '|' : ' '));
 };
 
 let decodebitrow = (lines, row) => {
